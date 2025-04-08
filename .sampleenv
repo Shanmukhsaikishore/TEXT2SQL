@@ -1,0 +1,6 @@
+
+# Gemini Configuration
+
+
+ LLM_PROVIDER=GEMINI
+ GEMINI_API_KEY="your gemini key"
