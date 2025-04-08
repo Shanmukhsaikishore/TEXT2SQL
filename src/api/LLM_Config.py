@@ -64,7 +64,7 @@ def get_completion_from_gemini(
             contents=combined_message,
             generation_config={"temperature": temperature}
         )
-
+                    
         logger.info("=== RAW OUTPUT ===")
         logger.info(f"Response Object: {response}")
 

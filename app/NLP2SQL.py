@@ -29,6 +29,25 @@ from time import time
 from collections import defaultdict
 from jsonschema import validate as json_validate, ValidationError
 
+import speech_recognition as sr
+
+def get_voice_input():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("🎤 Listening... Please speak now.")
+        audio = recognizer.listen(source)
+    
+    try:
+        query = recognizer.recognize_google(audio)
+        st.success(f"✅ You said: {query}")
+        return query
+    except sr.UnknownValueError:
+        st.error("⚠️ Sorry, I couldn't understand your speech. Try again.")
+        return ""
+    except sr.RequestError as e:
+        st.error(f"⚠️ Could not request results; {e}")
+        return ""
+
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -95,9 +114,20 @@ def apply_custom_theme():
         background-color: #333333;
         color: #64ffda;
     }}
+
+    
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
+    # Inject custom CSS to hide the "Deploy" button in the navbar
+    hide_deploy_button_css = """
+    <style>
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+    </style>
+    """
+    st.markdown(hide_deploy_button_css, unsafe_allow_html=True)
 
 # Apply the custom theme early
 apply_custom_theme()
@@ -948,14 +978,14 @@ def handle_query_response(response: dict, db_name: str, db_type: str, host: Opti
 
         colored_header("Summary Statistics", color_name="blue-70", description="")
         display_summary_statistics(filtered_results)
-
+        
         # Add Advanced Analysis section
-        colored_header("Advanced Analysis", color_name="blue-70", description="")
-        perform_advanced_analysis(filtered_results)
-
+        # colored_header("Advanced Analysis", color_name="blue-70", description="")
+        # perform_advanced_analysis(filtered_results)
+        
         # Add Data Quality Assessment section
         colored_header("Data Quality Assessment", color_name="blue-70", description="")
-        assess_data_quality(filtered_results)
+        # assess_data_quality(filtered_results)
 
         performance_metrics = analyze_query_performance(
             query,
@@ -1332,6 +1362,15 @@ if db_type == "SQLite":
                     with st.expander(f"View Schema: {table} 📖", expanded=False):
                         st.json(schemas[table])
 
+            user_message = st.session_state.get("user_message", "")
+
+            # Button for voice input
+            if st.button("🎤 Use Voice Input"):
+                voice_query = get_voice_input()
+                if voice_query:
+                    user_message = voice_query  # Set the text box value to the spoken query
+                    st.session_state.user_message = voice_query  # Update session state
+
             user_message = st.text_input(placeholder="Type your SQL query here...", key="user_message", label="Your Query 💬", label_visibility="hidden")
             if user_message:
                 selected_schemas = {table: schemas[table] for table in selected_tables}
@@ -1369,6 +1408,15 @@ elif db_type == "PostgreSQL":
             for table in selected_tables:
                 with st.expander(f"View Schema: {table} 📖", expanded=False):
                     st.json(schemas[table])
+
+                    user_message = st.session_state.get("user_message", "")
+
+            # Button for voice input
+            if st.button("🎤 Use Voice Input"):
+                voice_query = get_voice_input()
+                if voice_query:
+                    user_message = voice_query  # Set the text box value to the spoken query
+                    st.session_state.user_message = voice_query  # Update session state
 
             user_message = st.text_input(placeholder="Type your SQL query here...", key="user_message_pg", label="Your Query 💬", label_visibility="hidden")
             if user_message:
